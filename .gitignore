@@ -169,3 +169,6 @@ cache/
 
 # models
 models/
+
+# wandb 
+wandb/

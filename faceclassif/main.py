@@ -8,7 +8,7 @@ import evaluate
 import numpy as np
 
 from datasets import Dataset
-from transformers import AutoModelForImageClassification, TrainingArguments, Trainer
+from transformers import AutoModelForImageClassification, TrainingArguments, Trainer, ViTForImageClassification, ViTFeatureExtractor
 from datasets import load_dataset, load_from_disk
 from datasets.utils import DownloadMode
 
@@ -22,8 +22,9 @@ if __name__ == "__main__":
 
     faces = dataset.train_test_split(test_size=0.2)
 
-    checkpoint = "google/vit-base-patch16-224-in21k" # change it
-    image_processor = AutoImageProcessor.from_pretrained(checkpoint)
+    #checkpoint = "google/vit-base-patch16-224-in21k" # change it
+    checkpoint = "./models/checkpoint-7221"
+    image_processor = ViTFeatureExtractor.from_pretrained(checkpoint)
 
     normalize = Normalize(mean=image_processor.image_mean, std=image_processor.image_std)
     size = (
@@ -53,10 +54,14 @@ if __name__ == "__main__":
         predictions = np.argmax(predictions, axis=1)
         return accuracy.compute(predictions=predictions, references=labels)
 
-    model = AutoModelForImageClassification.from_pretrained(
+    model = ViTForImageClassification.from_pretrained(
         checkpoint,
         num_labels=2,
     )
+    #model = AutoModelForImageClassification.from_pretrained(
+    #    checkpoint,
+    #    num_labels=2,
+    #)
 
     training_args = TrainingArguments(
         output_dir="models",
@@ -67,12 +72,13 @@ if __name__ == "__main__":
         per_device_train_batch_size=16,
         gradient_accumulation_steps=4,
         per_device_eval_batch_size=16,
-        num_train_epochs=3,
+        num_train_epochs=128,
         warmup_ratio=0.1,
         logging_steps=10,
         load_best_model_at_end=True,
         metric_for_best_model="accuracy",
         push_to_hub=False,
+        report_to="wandb",
     )
 
     trainer = Trainer(
